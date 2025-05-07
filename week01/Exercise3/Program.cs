@@ -4,7 +4,7 @@ class Program
 {
     static void Main(string[] args)
     {
-       // Console.Write("what is the magic number? ");
+        // Console.Write("what is the magic number? ");
         //int magicNumber = int.Parse(Console.ReadLine());
 
         Random randomGenerator = new Random();
@@ -28,7 +28,7 @@ class Program
 
             else
             {
-                Console.WriteLine("You guessed it!")
+                Console.WriteLine("You guessed it!");
             }
         }
         
