@@ -2,14 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace JournalApp
 {
-    // Manages a list of Entry objects and handles save/load
     public class Journal
     {
         private readonly List<Entry> _entries = new List<Entry>();
-        private const string Separator = "~|~";
 
         public void AddEntry(Entry entry)
         {
@@ -26,25 +25,30 @@ namespace JournalApp
 
             Console.WriteLine("\n--- Journal Entries ---");
             foreach (var e in _entries)
-            {
                 Console.WriteLine(e);
-            }
         }
 
-        public void SaveToFile(string filename)
+        /// <summary>
+        /// Save all entries to a CSV file with proper quoting.
+        /// </summary>
+        public void SaveToCsv(string filename)
         {
-            using (var writer = new StreamWriter(filename))
+            using var writer = new StreamWriter(filename);
+            // header row
+            writer.WriteLine("Date,Prompt,Response");
+
+            foreach (var e in _entries)
             {
-                foreach (var e in _entries)
-                {
-                    // date~|~prompt~|~response
-                    writer.WriteLine($"{e.Date}{Separator}{e.Prompt}{Separator}{e.Response}");
-                }
+                writer.WriteLine($"{Quote(e.Date)},{Quote(e.Prompt)},{Quote(e.Response)}");
             }
-            Console.WriteLine($"Journal saved to \"{filename}\".");
+
+            Console.WriteLine($"Journal saved as CSV to \"{filename}\".");
         }
 
-        public void LoadFromFile(string filename)
+        /// <summary>
+        /// Load entries from a CSV file produced by SaveToCsv.
+        /// </summary>
+        public void LoadFromCsv(string filename)
         {
             if (!File.Exists(filename))
             {
@@ -52,16 +56,82 @@ namespace JournalApp
                 return;
             }
 
-            _entries.Clear();
-            foreach (var line in File.ReadAllLines(filename))
+            var lines = File.ReadAllLines(filename).ToList();
+            if (lines.Count < 2)
             {
-                var parts = line.Split(new[] { Separator }, StringSplitOptions.None);
+                Console.WriteLine("CSV file has no data rows.");
+                return;
+            }
+
+            _entries.Clear();
+            // skip header
+            foreach (var line in lines.Skip(1))
+            {
+                var parts = ParseCsvLine(line);
                 if (parts.Length == 3)
-                {
                     _entries.Add(new Entry(parts[0], parts[1], parts[2]));
+            }
+
+            Console.WriteLine($"Journal loaded from \"{filename}\" ({_entries.Count} entries).");
+        }
+
+        // Wraps a field in quotes, doubling any internal quotes
+        private static string Quote(string field)
+        {
+            var escaped = field.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+
+        // Simple RFC-style CSV parser for one line
+        private static string[] ParseCsvLine(string line)
+        {
+            var fields = new List<string>();
+            bool inQuotes = false;
+            var cur = "";
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (inQuotes)
+                {
+                    if (c == '"')
+                    {
+                        // look ahead for escaped quote
+                        if (i + 1 < line.Length && line[i + 1] == '"')
+                        {
+                            cur += '"';
+                            i++;
+                        }
+                        else
+                        {
+                            inQuotes = false;
+                        }
+                    }
+                    else
+                    {
+                        cur += c;
+                    }
+                }
+                else
+                {
+                    if (c == '"')
+                    {
+                        inQuotes = true;
+                    }
+                    else if (c == ',')
+                    {
+                        fields.Add(cur);
+                        cur = "";
+                    }
+                    else
+                    {
+                        cur += c;
+                    }
                 }
             }
-            Console.WriteLine($"Journal loaded from \"{filename}\" ({_entries.Count} entries).");
+
+            fields.Add(cur);
+            return fields.ToArray();
         }
     }
 }

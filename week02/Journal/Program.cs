@@ -15,15 +15,12 @@ namespace JournalApp
                 Console.WriteLine("\nJournal Menu:");
                 Console.WriteLine("1. Write a new entry");
                 Console.WriteLine("2. Display the journal");
-                Console.WriteLine("3. Save the journal to a file");
-                Console.WriteLine("4. Load the journal from a file");
+                Console.WriteLine("3. Save the journal to CSV");
+                Console.WriteLine("4. Load the journal from CSV");
                 Console.WriteLine("5. Quit");
                 Console.Write("Choose an option (1–5): ");
 
-                var choice = Console.ReadLine();
-                Console.WriteLine();
-
-                switch (choice)
+                switch (Console.ReadLine())
                 {
                     case "1":
                         WriteEntry(journal);
@@ -32,12 +29,20 @@ namespace JournalApp
                         journal.DisplayEntries();
                         break;
                     case "3":
-                        Console.Write("Filename to save to: ");
-                        journal.SaveToFile(Console.ReadLine());
+                        Console.Write("Filename to save as CSV (e.g. journal.csv): ");
+                        var outFile = Console.ReadLine()?.Trim();
+                        if (!string.IsNullOrEmpty(outFile))
+                            journal.SaveToCsv(outFile);
+                        else
+                            Console.WriteLine("Invalid filename.");
                         break;
                     case "4":
-                        Console.Write("Filename to load from: ");
-                        journal.LoadFromFile(Console.ReadLine());
+                        Console.Write("Filename to load from CSV: ");
+                        var inFile = Console.ReadLine()?.Trim();
+                        if (!string.IsNullOrEmpty(inFile))
+                            journal.LoadFromCsv(inFile);
+                        else
+                            Console.WriteLine("Invalid filename.");
                         break;
                     case "5":
                         quit = true;
@@ -53,16 +58,13 @@ namespace JournalApp
 
         private static void WriteEntry(Journal journal)
         {
-            string prompt = PromptGenerator.GetRandomPrompt();
+            var prompt = PromptGenerator.GetRandomPrompt();
             Console.WriteLine($"Prompt: {prompt}");
             Console.Write("Your response: ");
-            string response = Console.ReadLine();
+            var response = Console.ReadLine() ?? "";
 
-            // Use current date as string
-            string date = DateTime.Now.ToShortDateString();
-            var entry = new Entry(date, prompt, response);
-            journal.AddEntry(entry);
-
+            var date = DateTime.Now.ToShortDateString();
+            journal.AddEntry(new Entry(date, prompt, response));
             Console.WriteLine("Entry recorded.");
         }
     }

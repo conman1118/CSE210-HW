@@ -19,7 +19,7 @@ namespace JournalApp
 
         public override string ToString()
         {
-            // Customize how each entry is displayed
+            // How each entry is displayed on screen
             return $"{Date} — {Prompt}\n  {Response}\n";
         }
     }
