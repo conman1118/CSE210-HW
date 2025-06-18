@@ -17,6 +17,7 @@ namespace FitnessTracker
 
             foreach (var act in activities)
             {
+                Console.WriteLine();
                 Console.WriteLine(act.GetSummary());
             }
         }
